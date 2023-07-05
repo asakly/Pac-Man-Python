@@ -29,13 +29,21 @@ turns_allowed = [False, False, False, False]
 direction_command = 0
 player_speed = 2
 score = 0
+powerup = False
+power_counter = 0
+eaten_ghost = [False, False, False, False]
+startup_counter = 0
+moving = False
+lives = 3
 
 def draw_misc():
     score_text = font.render(f'Score: {score}', True, 'white')
     screen.blit(score_text, (10, 820))
+    for i in range(lives):
+        screen.blit(pygame.transform.scale(player_images[0], (24, 24)), (650+ i *40, 818))
 
 
-def check_collisions(score1):
+def check_collisions(score1, power, power_count, eaten_ghosts):
 
     if 0 < player_x < 770:
         if level[center_y // tile_h][center_x // tile_w] == 1:
@@ -44,7 +52,10 @@ def check_collisions(score1):
         if level[center_y // tile_h][center_x // tile_w] == 2:
             level[center_y // tile_h][center_x // tile_w] = 0
             score1 += 50
-    return score1
+            power = True
+            power_count = 0
+            eaten_ghosts =[False, False, False, False]
+    return score1, power, power_count, eaten_ghosts
 
 
 
@@ -189,6 +200,18 @@ while run:
     else:
         counter = 0
         flicker = True
+    if powerup and power_counter < 600:
+        power_counter += 1
+    elif powerup and power_counter >= 600:
+        power_counter = 0
+        powerup = False
+        eaten_ghost = [False, False, False, False]
+    if startup_counter < 180:
+        moving = False
+        startup_counter += 1
+    else:
+        moving = True
+
 
     screen.fill('black')
     draw_board()
@@ -198,8 +221,9 @@ while run:
     center_y = player_y + 17
     pygame.draw.circle(screen, 'white', (center_x, center_y), 2)
     turns_allowed = check_position(center_x, center_y)
-    player_x, player_y = move_player(player_x, player_y)
-    score = check_collisions(score)
+    if moving:
+        player_x, player_y = move_player(player_x, player_y)
+    score, powerup, power_counter, eaten_ghost = check_collisions(score, powerup, power_counter, eaten_ghost)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
