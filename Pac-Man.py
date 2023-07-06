@@ -19,10 +19,29 @@ color = 'blue'
 player_images = []
 for i in range(1, 5):
     player_images.append(pygame.transform.scale(pygame.image.load(f'Sprites/Pac-Man_Sprite/pac_man_{i}.png'), (32, 32)))
+blinky_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/Blinky.png'), (32, 32))
+pinky_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/Pinky.png'), (32, 32))
+inky_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/Inky.png'), (32, 32))
+clyde_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/Clyde.png'), (32, 32))
+spooked_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/powerup.png'), (32, 32))
+dead_image = pygame.transform.scale(pygame.image.load(f'Sprites/Ghost_Sprites/dead.png'), (32, 32))
 player_x = 385
 player_y = 595
 counter = 0
 direction = 0
+blinky_x = 52
+blinky_y = 68
+blinky_direction = 0
+inky_x = 440
+inky_y = 448
+inky_direction = 2
+pinky_x = 440
+pinky_y = 398
+pinky_direction = 2
+clyde_x = 440
+clyde_y = 448
+clyde_direction = 2
+
 flicker = False
 # R, L, U, D
 turns_allowed = [False, False, False, False]
@@ -32,13 +51,58 @@ score = 0
 powerup = False
 power_counter = 0
 eaten_ghost = [False, False, False, False]
+targets = [(player_x, player_y), (player_x, player_y), (player_x, player_y), (player_x, player_y)]
+blinky_dead = False
+inky_dead = False
+pinky_dead = False
+clyde_dead = False
+blinky_box = False
+inky_box = False
+pinky_box = False
+clyde_box = False
+ghost_speed = 2
 startup_counter = 0
 moving = False
 lives = 3
 
+class Ghost:
+    def __init__(self, x_coord, y_coord, target, speed, img, direct, dead, box, id):
+        self.x_pos = x_coord
+        self.y_pos = y_coord
+        self.center_x = self.x_pos + 16
+        self.center_y = self.y_pos + 16
+        self.target = target
+        self.speed = speed
+        self.img = img
+        self.direction = direct
+        self.dead = dead
+        self.in_box = box
+        self.id = id
+        self.turns, self.in_box = self.check_collisions()
+        self.rect = self.draw()
+
+    def draw(self):
+        if (not powerup and not self.dead) or (eaten_ghost[self.id] and powerup and not self.dead):
+            screen.blit(self.img, (self.x_pos, self.y_pos))
+        elif powerup and not self.dead and not eaten_ghost[self.id]:
+            screen.blit(spooked_image, (self.x_pos, self.y_pos))
+        else:
+            screen.blit(dead_image, (self.x_pos, self.y_pos))
+
+        ghost_rect = pygame.rect.Rect((self.center_x - 15, self.center_y - 15), (30, 30))
+        return ghost_rect
+
+    def check_collisions(self):
+        self.turns = [False, False, False, False]
+        self.in_box = True
+        return self.turns, self.in_box
+
+
 def draw_misc():
     score_text = font.render(f'Score: {score}', True, 'white')
     screen.blit(score_text, (10, 820))
+    if powerup:
+        pygame.draw.circle(screen, 'blue', (140, 800), 15)
     for i in range(lives):
         screen.blit(pygame.transform.scale(player_images[0], (24, 24)), (650+ i *40, 818))
 
@@ -216,6 +280,14 @@ while run:
     screen.fill('black')
     draw_board()
     draw_player()
+    blinky = Ghost(blinky_x, blinky_y, targets[0], ghost_speed, blinky_image, blinky_direction, blinky_dead,
+                   blinky_box, 0)
+    inky = Ghost(inky_x, inky_y, targets[1], ghost_speed, inky_image, inky_direction, inky_dead,
+                   blinky_box, 0)
+    pinky = Ghost(pinky_x, pinky_y, targets[2], ghost_speed, pinky_image, pinky_direction, pinky_dead,
+                  pinky_box, 0)
+    clyde = Ghost(clyde_x, clyde_y, targets[3], ghost_speed, clyde_image, clyde_direction, clyde_dead,
+                   clyde_box, 0)
     draw_misc()
     center_x = player_x + 17
     center_y = player_y + 17
